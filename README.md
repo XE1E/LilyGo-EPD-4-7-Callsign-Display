@@ -9,6 +9,7 @@ Amateur radio callsign display for LilyGo T5 4.7" e-paper display (non-touch ver
 - **Large callsign letters** - 4-6 characters, auto-sized to fill screen
 - **World timezone map** - Secondary screen with world map
 - **Web configuration** - Configure via WiFi AP, no recompilation needed
+- **Multi-language** - Spanish, English, French (selectable in config)
 - **BOOT button navigation** - Toggle screens with physical button
 - **Deep sleep** - Battery-friendly operation with configurable sleep interval
 - **No touch required** - Works with non-touch LilyGo T5 4.7" S3
@@ -67,6 +68,7 @@ After configuration, the device displays your callsign and enters deep sleep.
 | Line 1 | Name or first subtitle line | John Smith |
 | Line 2 | Location, grid locator, etc. | Mexico City - EK09 |
 | Sleep interval | Minutes between display refreshes | 60 |
+| Language | Interface language | Espanol / English / Francais |
 
 ## Screens
 

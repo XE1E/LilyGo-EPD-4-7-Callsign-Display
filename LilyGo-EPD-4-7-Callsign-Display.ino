@@ -101,6 +101,114 @@ String callsignText = "CALL";
 String callsignLine1 = "Your Name";
 String callsignLine2 = "Your Location";
 int sleepMinutes = 60;  // Deep sleep interval
+String lang = "es";     // Language: "es", "en", "fr" (default: Spanish)
+
+// ============== LANGUAGE STRINGS ==============
+struct LangStrings {
+  const char* configMode;
+  const char* connectWifi;
+  const char* password;
+  const char* openBrowser;
+  const char* pressRst;
+  const char* title;
+  const char* lblCallsign;
+  const char* lblLine1;
+  const char* lblLine2;
+  const char* lblSleep;
+  const char* hintCallsign;
+  const char* hintSleep;
+  const char* btnSave;
+  const char* instructions;
+  const char* instr1;
+  const char* instr2;
+  const char* instr3;
+  const char* instr4;
+  const char* current;
+  const char* saved;
+  const char* restart;
+  const char* lblLang;
+};
+
+const LangStrings LANG_ES = {
+  "MODO CONFIGURACION",
+  "Conectar a WiFi:",
+  "Clave: ",
+  "Luego abrir navegador:",
+  "Presiona RST para salir del modo configuracion",
+  "Callsign Display",
+  "Indicativo (4-6 caracteres)",
+  "Linea 1 (Nombre)",
+  "Linea 2 (Ubicacion / Grid)",
+  "Intervalo de actualizacion (minutos)",
+  "Solo letras A-Z y numeros 0-9",
+  "El dispositivo entrara en reposo entre actualizaciones",
+  "Guardar Configuracion",
+  "Instrucciones:",
+  "1. Ingresa tu indicativo e info",
+  "2. Clic en Guardar - reiniciara",
+  "3. Presiona BOOT para cambiar pantalla",
+  "4. Manten BOOT 3 seg para volver aqui",
+  "Actual: ",
+  "Configuracion Guardada!",
+  "Reiniciando en 3 segundos...",
+  "Idioma"
+};
+
+const LangStrings LANG_EN = {
+  "CONFIGURATION MODE",
+  "Connect to WiFi:",
+  "Password: ",
+  "Then open browser:",
+  "Press RST button to exit configuration mode",
+  "Callsign Display",
+  "Callsign (4-6 characters)",
+  "Line 1 (Name)",
+  "Line 2 (Location / Grid)",
+  "Display refresh interval (minutes)",
+  "Letters A-Z and numbers 0-9 only",
+  "Device will deep sleep between refreshes to save battery",
+  "Save Configuration",
+  "Instructions:",
+  "1. Enter your callsign and info",
+  "2. Click Save - device will restart",
+  "3. Press BOOT button to toggle screens",
+  "4. Hold BOOT 3 sec to return here",
+  "Current: ",
+  "Configuration Saved!",
+  "Device will restart in 3 seconds...",
+  "Language"
+};
+
+const LangStrings LANG_FR = {
+  "MODE CONFIGURATION",
+  "Connecter au WiFi:",
+  "Mot de passe: ",
+  "Puis ouvrir le navigateur:",
+  "Appuyez sur RST pour quitter le mode configuration",
+  "Callsign Display",
+  "Indicatif (4-6 caracteres)",
+  "Ligne 1 (Nom)",
+  "Ligne 2 (Emplacement / Grid)",
+  "Intervalle de rafraichissement (minutes)",
+  "Lettres A-Z et chiffres 0-9 uniquement",
+  "L'appareil se met en veille entre les mises a jour",
+  "Enregistrer la Configuration",
+  "Instructions:",
+  "1. Entrez votre indicatif et infos",
+  "2. Cliquez sur Enregistrer - redemarrage",
+  "3. Appuyez sur BOOT pour changer d'ecran",
+  "4. Maintenez BOOT 3 sec pour revenir ici",
+  "Actuel: ",
+  "Configuration Enregistree!",
+  "Redemarrage dans 3 secondes...",
+  "Langue"
+};
+
+const LangStrings* getCurrentLang() {
+  if (lang == "es") return &LANG_ES;
+  if (lang == "fr") return &LANG_FR;
+  return &LANG_EN;
+}
 
 // ============== DISPLAY FUNCTIONS ==============
 
@@ -147,11 +255,12 @@ void loadConfig() {
   callsignLine1 = preferences.getString("line1", "Your Name");
   callsignLine2 = preferences.getString("line2", "Your Location");
   sleepMinutes = preferences.getInt("sleep", 60);
+  lang = preferences.getString("lang", "en");
   configuredOnce = preferences.getBool("configured", false);
   preferences.end();
 
-  Serial.printf("Config loaded: %s / %s / %s / sleep=%d min\n",
-    callsignText.c_str(), callsignLine1.c_str(), callsignLine2.c_str(), sleepMinutes);
+  Serial.printf("Config loaded: %s / %s / %s / sleep=%d min / lang=%s\n",
+    callsignText.c_str(), callsignLine1.c_str(), callsignLine2.c_str(), sleepMinutes, lang.c_str());
 }
 
 void saveConfig() {
@@ -160,6 +269,7 @@ void saveConfig() {
   preferences.putString("line1", callsignLine1);
   preferences.putString("line2", callsignLine2);
   preferences.putInt("sleep", sleepMinutes);
+  preferences.putString("lang", lang);
   preferences.putBool("configured", true);
   preferences.end();
 
@@ -168,8 +278,13 @@ void saveConfig() {
 
 // ============== WEB SERVER ==============
 
-const char* CONFIG_PAGE = R"rawliteral(
-<!DOCTYPE html>
+String buildConfigPage() {
+  const LangStrings* L = getCurrentLang();
+  String selES = (lang == "es") ? " selected" : "";
+  String selEN = (lang == "en") ? " selected" : "";
+  String selFR = (lang == "fr") ? " selected" : "";
+
+  String page = R"(<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -180,11 +295,11 @@ const char* CONFIG_PAGE = R"rawliteral(
     h1 { color: #00d4ff; text-align: center; }
     .form-group { margin: 20px 0; }
     label { display: block; margin-bottom: 8px; font-weight: bold; }
-    input[type="text"], input[type="number"] {
+    input[type="text"], input[type="number"], select {
       width: 100%; padding: 12px; border: 2px solid #333; border-radius: 8px;
       background: #16213e; color: #fff; font-size: 18px; box-sizing: border-box;
     }
-    input:focus { border-color: #00d4ff; outline: none; }
+    input:focus, select:focus { border-color: #00d4ff; outline: none; }
     .callsign-input { font-family: monospace; font-size: 28px; text-transform: uppercase; text-align: center; letter-spacing: 8px; }
     button {
       width: 100%; padding: 15px; background: #00d4ff; color: #000; border: none;
@@ -194,46 +309,103 @@ const char* CONFIG_PAGE = R"rawliteral(
     .info { background: #16213e; padding: 15px; border-radius: 8px; margin-top: 30px; font-size: 14px; }
     .current { color: #00d4ff; }
     .hint { color: #888; font-size: 12px; margin-top: 5px; }
+    .lang-row { display: flex; gap: 10px; }
+    .lang-row select { flex: 1; }
   </style>
 </head>
 <body>
-  <h1>Callsign Display</h1>
+  <h1>)";
+  page += L->title;
+  page += R"(</h1>
   <form action="/save" method="POST">
     <div class="form-group">
-      <label>Callsign (4-6 characters)</label>
+      <label>)";
+  page += L->lblCallsign;
+  page += R"(</label>
       <input type="text" name="callsign" class="callsign-input" maxlength="6"
-             pattern="[A-Za-z0-9]{4,6}" value="%CALLSIGN%" required>
-      <div class="hint">Letters A-Z and numbers 0-9 only</div>
+             pattern="[A-Za-z0-9]{4,6}" value=")";
+  page += callsignText;
+  page += R"(" required>
+      <div class="hint">)";
+  page += L->hintCallsign;
+  page += R"(</div>
     </div>
     <div class="form-group">
-      <label>Line 1 (Name)</label>
-      <input type="text" name="line1" maxlength="50" value="%LINE1%">
+      <label>)";
+  page += L->lblLine1;
+  page += R"(</label>
+      <input type="text" name="line1" maxlength="50" value=")";
+  page += callsignLine1;
+  page += R"(">
     </div>
     <div class="form-group">
-      <label>Line 2 (Location / Grid)</label>
-      <input type="text" name="line2" maxlength="50" value="%LINE2%">
+      <label>)";
+  page += L->lblLine2;
+  page += R"(</label>
+      <input type="text" name="line2" maxlength="50" value=")";
+  page += callsignLine2;
+  page += R"(">
     </div>
     <div class="form-group">
-      <label>Display refresh interval (minutes)</label>
-      <input type="number" name="sleep" min="1" max="1440" value="%SLEEP%">
-      <div class="hint">Device will deep sleep between refreshes to save battery</div>
+      <label>)";
+  page += L->lblSleep;
+  page += R"(</label>
+      <input type="number" name="sleep" min="1" max="1440" value=")";
+  page += String(sleepMinutes);
+  page += R"(">
+      <div class="hint">)";
+  page += L->hintSleep;
+  page += R"(</div>
     </div>
-    <button type="submit">Save Configuration</button>
+    <div class="form-group">
+      <label>)";
+  page += L->lblLang;
+  page += R"(</label>
+      <select name="lang">
+        <option value="es")";
+  page += selES;
+  page += R"(>Espanol</option>
+        <option value="en")";
+  page += selEN;
+  page += R"(>English</option>
+        <option value="fr")";
+  page += selFR;
+  page += R"(>Francais</option>
+      </select>
+    </div>
+    <button type="submit">)";
+  page += L->btnSave;
+  page += R"(</button>
   </form>
   <div class="info">
-    <strong>Instructions:</strong><br>
-    1. Enter your callsign and info<br>
-    2. Click Save - device will restart<br>
-    3. Press BOOT button to toggle screens<br>
-    4. Hold BOOT 3 sec to return here<br><br>
-    <span class="current">Current: %CALLSIGN%</span>
+    <strong>)";
+  page += L->instructions;
+  page += R"(</strong><br>
+    )";
+  page += L->instr1;
+  page += R"(<br>
+    )";
+  page += L->instr2;
+  page += R"(<br>
+    )";
+  page += L->instr3;
+  page += R"(<br>
+    )";
+  page += L->instr4;
+  page += R"(<br><br>
+    <span class="current">)";
+  page += L->current;
+  page += callsignText;
+  page += R"(</span>
   </div>
 </body>
-</html>
-)rawliteral";
+</html>)";
+  return page;
+}
 
-const char* SAVED_PAGE = R"rawliteral(
-<!DOCTYPE html>
+String buildSavedPage() {
+  const LangStrings* L = getCurrentLang();
+  String page = R"(<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -247,20 +419,22 @@ const char* SAVED_PAGE = R"rawliteral(
   </style>
 </head>
 <body>
-  <h1>Configuration Saved!</h1>
-  <div class="callsign">%CALLSIGN%</div>
-  <p>Device will restart in 3 seconds...</p>
+  <h1>)";
+  page += L->saved;
+  page += R"(</h1>
+  <div class="callsign">)";
+  page += callsignText;
+  page += R"(</div>
+  <p>)";
+  page += L->restart;
+  page += R"(</p>
 </body>
-</html>
-)rawliteral";
+</html>)";
+  return page;
+}
 
 void handleRoot() {
-  String page = CONFIG_PAGE;
-  page.replace("%CALLSIGN%", callsignText);
-  page.replace("%LINE1%", callsignLine1);
-  page.replace("%LINE2%", callsignLine2);
-  page.replace("%SLEEP%", String(sleepMinutes));
-  server.send(200, "text/html", page);
+  server.send(200, "text/html", buildConfigPage());
 }
 
 void handleSave() {
@@ -280,14 +454,18 @@ void handleSave() {
   if (server.hasArg("line1")) callsignLine1 = server.arg("line1");
   if (server.hasArg("line2")) callsignLine2 = server.arg("line2");
   if (server.hasArg("sleep")) sleepMinutes = server.arg("sleep").toInt();
+  if (server.hasArg("lang")) {
+    String newLang = server.arg("lang");
+    if (newLang == "es" || newLang == "en" || newLang == "fr") {
+      lang = newLang;
+    }
+  }
   if (sleepMinutes < 1) sleepMinutes = 1;
   if (sleepMinutes > 1440) sleepMinutes = 1440;
 
   saveConfig();
 
-  String page = SAVED_PAGE;
-  page.replace("%CALLSIGN%", callsignText);
-  server.send(200, "text/html", page);
+  server.send(200, "text/html", buildSavedPage());
 
   delay(3000);
   ESP.restart();
@@ -313,30 +491,32 @@ void startAPMode() {
 }
 
 void displayAPInfo() {
+  const LangStrings* L = getCurrentLang();
+
   epd_poweron();
   epd_clear();
 
   fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, White);
 
   setFont(OpenSans24B);
-  drawString(SCREEN_WIDTH / 2, 80, "CONFIGURATION MODE", CENTER);
+  drawString(SCREEN_WIDTH / 2, 80, L->configMode, CENTER);
 
   setFont(OpenSans18B);
-  drawString(SCREEN_WIDTH / 2, 160, "Connect to WiFi:", CENTER);
+  drawString(SCREEN_WIDTH / 2, 160, L->connectWifi, CENTER);
 
   setFont(OpenSans24B);
   drawString(SCREEN_WIDTH / 2, 220, AP_SSID, CENTER);
 
   setFont(OpenSans18B);
-  drawString(SCREEN_WIDTH / 2, 280, "Password: " + String(AP_PASSWORD), CENTER);
+  drawString(SCREEN_WIDTH / 2, 280, String(L->password) + AP_PASSWORD, CENTER);
 
-  drawString(SCREEN_WIDTH / 2, 360, "Then open browser:", CENTER);
+  drawString(SCREEN_WIDTH / 2, 360, L->openBrowser, CENTER);
 
   setFont(OpenSans24B);
   drawString(SCREEN_WIDTH / 2, 420, "http://192.168.4.1", CENTER);
 
   setFont(OpenSans12B);
-  drawString(SCREEN_WIDTH / 2, 500, "Press RST button to exit configuration mode", CENTER);
+  drawString(SCREEN_WIDTH / 2, 500, L->pressRst, CENTER);
 
   epd_draw_grayscale_image(epd_full_screen(), framebuffer);
   epd_poweroff();
