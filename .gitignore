@@ -1,0 +1,19 @@
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.hex
+
+# IDE files
+.vscode/
+*.code-workspace
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.bak
+*.swp
